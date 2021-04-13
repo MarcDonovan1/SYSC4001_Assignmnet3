@@ -1,13 +1,6 @@
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
 
-struct mesg_account_creation
-{
-    char account_number[5];
-    float funds;
-    char pin[3];
-};
+
+#include "header.h"
 
 int checkInput(char string[], int length)
 {
@@ -32,21 +25,33 @@ int checkInput(char string[], int length)
 int main()
 {
     struct mesg_account_creation account;
+    struct mesg_server serverMsg;
+    key_t key;
+    int msgid;
+    //key = ftok("progfile", 65);
+    msgid = msgget((key_t)1234, 0666 | IPC_CREAT);
 
     while (1)
     {
+
         printf("Enter Account Number, pin, then funds:");
         scanf("%s %s %f", account.account_number, account.pin, &account.funds);
         size_t size = sizeof(account.account_number) / sizeof(account.account_number[0]);
-        printf("%i", checkInput(account.account_number, 5));
-        while ((checkInput(account.account_number, 5) == 0)||(checkInput(account.pin, 3) == 0))
+        while ((checkInput(account.account_number, 5) == 0) || (checkInput(account.pin, 3) == 0))
         {
-            printf("Make sure your data is the correct length: Account Number\n");
+            printf("Make sure your data is the correct length\n");
             printf("Enter Account Number, pin, then funds:");
             scanf("%s %s %f", account.account_number, account.pin, &account.funds);
             size = sizeof(account.account_number) / sizeof(account.account_number[0]);
         }
 
         printf("Account information\nAccount Number: %s \nPin: %s \nFunds: %f\n", account.account_number, account.pin, account.funds);
+        serverMsg.account = account;
+        serverMsg.msg_type = UPDATE_DB;
+        serverMsg.account.msg_type=UPDATE_DB;
+        if (msgsnd(msgid, &serverMsg, sizeof(serverMsg), 0)==-1){
+            perror("msgsnd: msgsnd faild");
+            exit(1);
+        }
     }
 }
