@@ -4,6 +4,10 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+#include <sys/shm.h>
+#include "shared_value.h"
 
 void killChild(int sts)
 {
@@ -26,6 +30,9 @@ int main()
     char *message;
     char n;
     int exit_code;
+    char *shared_memory;
+    struct shared_use_st *shared_stuff;
+
     printf("fork program starting\n");
     pid = fork();
 
@@ -38,8 +45,9 @@ int main()
     case 0:
         //Child Process
         n = '2';
-        message = "I am Process 2";
-        //(void)signal(SIGINT, killChild);
+        //message = "I am Process 2";
+        puts("This runs");
+        (void)signal(SIGINT, killChild);
         break;
     default:
         //Main process
@@ -49,7 +57,25 @@ int main()
         execl("./Process1", "./Process1", (char *)NULL);
         break;
     }
-    char input = '2';
+    puts("This is process 2");
+    unsigned int shmid;
+    shmid = shmget((key_t)1234, sizeof(struct shared_use_st), 0666 | IPC_CREAT);
+
+    if (shmid == -1)
+    {
+        fprintf(stderr, "shmgasdasdet failed\n");
+        exit(EXIT_FAILURE);
+    }
+
+    shared_memory = (char *)shmat(shmid, NULL, 0);
+    if (shared_memory == (void *)-1)
+    {
+        fprintf(stderr, "shmat failed\n");
+        exit(EXIT_FAILURE);
+    }
+
+    char input = '0';
+    shared_stuff->changed = 1;
     while (1)
     {
         if (input == n)
