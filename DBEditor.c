@@ -36,21 +36,25 @@ int main()
 
         printf("Enter Account Number, pin, then funds:");
         scanf("%s %s %f", account.account_number, account.pin, &account.funds);
-        size_t size = sizeof(account.account_number) / sizeof(account.account_number[0]);
         while ((checkInput(account.account_number, 5) == 0) || (checkInput(account.pin, 3) == 0))
         {
             printf("Make sure your data is the correct length\n");
             printf("Enter Account Number, pin, then funds:");
             scanf("%s %s %f", account.account_number, account.pin, &account.funds);
-            size = sizeof(account.account_number) / sizeof(account.account_number[0]);
         }
 
         printf("Account information\nAccount Number: %s \nPin: %s \nFunds: %f\n", account.account_number, account.pin, account.funds);
         serverMsg.account = account;
         serverMsg.msg_type = UPDATE_DB;
-        serverMsg.account.msg_type=UPDATE_DB;
-        if (msgsnd(msgid, &serverMsg, sizeof(serverMsg), 0)==-1){
+        serverMsg.account.msg_type = UPDATE_DB;
+        if (msgsnd(msgid, &serverMsg, sizeof(serverMsg), 0) == -1)
+        {
             perror("msgsnd: msgsnd faild");
+            exit(1);
+        }
+        if (msgrcv(msgid, &serverMsg, sizeof(serverMsg), 0, 0) == -1)
+        {
+            perror("msgrcv: msgrcv failed");
             exit(1);
         }
     }

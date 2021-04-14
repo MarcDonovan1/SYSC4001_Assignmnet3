@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
+#include <string.h>
 struct mesg_account_creation
 {
     int msg_type;
@@ -15,10 +16,14 @@ struct mesg_server{
     int msg_type;
     struct mesg_account_creation account;
 };
-const int PIN = 0;
-const int PIN_WRONG = 1;
-const int BALANCE = 2;
-const int WITHDRAW = 3;
-const int NSF = 4;
-const int FUNDS_OK = 5;
-const int UPDATE_DB = 6;
+
+#define PIN_WRONG 1
+#define BALANCE 2
+#define WITHDRAW 3
+#define NSF  4
+#define FUNDS_OK  5
+#define UPDATE_DB 6
+#define OK 7
+#define ACCOUNT_BLOCKED 8
+#define PIN 9
+#define ACCOUNT_OK 10
