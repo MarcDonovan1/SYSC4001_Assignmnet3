@@ -14,7 +14,7 @@ int checkInput(char string[], int length)
     return 1;
 }
 
-char readDB(struct mesg_server receievedInfo)
+char *readDB(struct mesg_server receievedInfo)
 {
     FILE *fptr;
     int replace = 0;
@@ -29,33 +29,24 @@ char readDB(struct mesg_server receievedInfo)
 
     while (fgets(line, sizeof(line), fptr))
     {
-        printf("%s", line);
+        printf("y");
         char *token = strtok(line, " ");
+        printf("%i",strcmp(token, receievedInfo.account.account_number));
         if (strcmp(token, receievedInfo.account.account_number) == 0)
         {
             token = strtok(NULL, " ");
-            while (token != NULL)
-            {
-                printf("%s\n", token);
-                
+            //Return balance
+            if (receievedInfo.msg_type==BALANCE){
+                return token;
+            }
+            //Return Pin
+            else{
+                token = strtok(NULL, " ");
+                return token;
             }
         }
-
-        //If we have found the account we want
-        // if (parts == receievedInfo.account.account_number)
-        // {
-        //     //Pin request
-
-        //     if (receievedInfo.msg_type == PIN)
-        //     {
-        //         return parts;
-        //     }
-        //     //Balance request
-        //     char *parts = strtok(number, space);
-        //     return parts;
-        // }
     }
-    fclose(fptr);
+    
     return NULL;
 }
 
@@ -126,7 +117,7 @@ void db_Server()
     int msgid;
     struct mesg_server account;
     struct mesg_server sendBack;
-    char information;
+    char *information;
     msgid = msgget((key_t)1234, 0666 | IPC_CREAT);
     while (1)
     {
@@ -139,7 +130,7 @@ void db_Server()
         {
         case PIN:
             information = readDB(account);
-            printf("%c", information);
+            printf("%s", information);
             sendBack.msg_type = OK;
             // if (information != account.account.pin)
             // {
@@ -151,9 +142,9 @@ void db_Server()
                 exit(1);
             }
         case BALANCE:
-            //strcat(information, readDB(account));
-            //information = readDB(account);
+            information = readDB(account);
             sendBack.msg_type = BALANCE;
+            sendBack.account.funds=atof(information);
             //double amount = atof(readDB(account));
             //printf("%f",amount);
             //sendBack.account.funds = (float)strtod(readDB(account),NULL);
