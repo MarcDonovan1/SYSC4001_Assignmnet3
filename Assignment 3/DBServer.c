@@ -14,14 +14,15 @@ char *readDB(struct mesg_server receievedInfo)
         printf("Unable to open files");
         exit(1);
     }
-
-    while (fgets(number, sizeof(number), fptr) != NULL)
+    printf("This is ran");
+    while (fgets(number,999, fptr) != NULL)
     {
         char *parts = strtok(number, space);
-
+        printf("%s", number);
         //If we have found the account we want
         if (parts == receievedInfo.account.account_number)
         {
+            fclose(fptr);
             //Pin request
             if (receievedInfo.msg_type == PIN)
            {
@@ -112,7 +113,11 @@ int main()
         case WITHDRAW:
             break;
         case UPDATE_DB:
-            updateDB(account);
+            printf("This is ranb") ;
+            //updateDB(account);
+            readDB(account);
+        case INTEREST:
+            break;
         }
     }
 }

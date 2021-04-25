@@ -6,6 +6,7 @@
 #include <string.h>
 struct mesg_account_creation
 {
+    int msg_type;
     char account_number[5];
     float funds;
     char pin[3];
@@ -15,7 +16,7 @@ struct mesg_server{
     int msg_type;
     struct mesg_account_creation account;
 };
-#define INTEREST 11
+
 #define PIN_WRONG 1
 #define BALANCE 2
 #define WITHDRAW 3

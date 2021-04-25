@@ -2,17 +2,7 @@
 
 #include "header.h"
 
-int checkInput(char string[], int length)
-{
-    int i;
-    for (i = 0; string[i] != '\0'; i++)
-        ;
-    if (i != length)
-    {
-        return 0;
-    }
-    return 1;
-}
+
 
 /**
  * General format for data input
