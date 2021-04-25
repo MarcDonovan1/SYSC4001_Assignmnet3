@@ -101,8 +101,7 @@ void db_Editor()
 
         printf("Account information\nAccount Number: %s \nPin: %s \nFunds: %f\n", account.account_number, account.pin, account.funds);
         serverMsg.account = account;
-        serverMsg.msg_type = PIN;
-        serverMsg.account.msg_type = UPDATE_DB;
+        serverMsg.msg_type = UPDATE_DB;
         if (msgsnd(msgid, &serverMsg, sizeof(serverMsg), 0) == -1)
         {
             perror("msgsnd: msgsnd faild");
