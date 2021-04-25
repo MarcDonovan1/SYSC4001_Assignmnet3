@@ -17,9 +17,7 @@ int checkInput(char string[], int length)
 char *readDB(struct mesg_server receievedInfo)
 {
     FILE *fptr;
-    int replace = 0;
     char line[999];
-    char space[] = " ";
     fptr = fopen("database.txt", "r");
     if (fptr == NULL)
     {
@@ -29,7 +27,6 @@ char *readDB(struct mesg_server receievedInfo)
 
     while (fgets(line, sizeof(line), fptr))
     {
-        printf("y");
         char *token = strtok(line, " ");
         printf("%i",strcmp(token, receievedInfo.account.account_number));
         if (strcmp(token, receievedInfo.account.account_number) == 0)
