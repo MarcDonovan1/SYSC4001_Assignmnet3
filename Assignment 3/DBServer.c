@@ -45,7 +45,7 @@ void updateDB(struct mesg_server receivedInfo)
     char information[90];
     char number[10];
     fptr = fopen("database.txt", "a");
-    fTemp = fopen("replace.tmp", "w");
+    //fTemp = fopen("replace.tmp", "w");
     if (fptr == NULL || fTemp == NULL)
     {
         printf("Unable to open files");

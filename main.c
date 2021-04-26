@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include "header.h"
-// DB can be a file or be in memory for this exercise
 
 int checkInput(char string[], int length)
 {
@@ -28,22 +27,24 @@ char *readDB(struct mesg_server receievedInfo)
     while (fgets(line, sizeof(line), fptr))
     {
         char *token = strtok(line, " ");
-        printf("%i",strcmp(token, receievedInfo.account.account_number));
+        printf("%i", strcmp(token, receievedInfo.account.account_number));
         if (strcmp(token, receievedInfo.account.account_number) == 0)
         {
             token = strtok(NULL, " ");
             //Return balance
-            if (receievedInfo.msg_type==BALANCE){
+            if (receievedInfo.msg_type == BALANCE)
+            {
                 return token;
             }
             //Return Pin
-            else{
+            else
+            {
                 token = strtok(NULL, " ");
                 return token;
             }
         }
     }
-    
+
     return NULL;
 }
 
@@ -52,12 +53,12 @@ void updateDB(struct mesg_server receivedInfo)
     FILE *fptr;
     FILE *fTemp;
     int replace = 0;
-    char buffer[999], oldInfo[99], newInfo[99];
-    char information[90];
+    char line[999], filename[] = "database.txt",c;
+    char *information;
     char number[10];
     fptr = fopen("database.txt", "a");
-    fTemp = fopen("replace.tmp", "w");
-    if (fptr == NULL || fTemp == NULL)
+
+    if (fptr == NULL)
     {
         printf("Unable to open files");
         exit(1);
@@ -72,8 +73,40 @@ void updateDB(struct mesg_server receivedInfo)
     strcat(information, " ");
     strcat(information, number);
     strcat(information, " \n");
-    fputs(information, fptr);
-    fclose(fptr);
+    //If the account is present already, setup a new file without the account to be updatted
+    if (readDB(receivedInfo) != NULL)
+    {
+        fTemp = fopen("replace.txt", "a");
+        if (fTemp == NULL)
+        {
+            printf("Unable to open files");
+            exit(1);
+        }
+        c = fgetc(fptr);
+        printf("%c",c);
+        while (c != EOF)
+        {
+            char *token = strtok(line, " ");
+            if (strcmp(token, receivedInfo.account.account_number) != 0)
+            {
+               fputc(c, fTemp);
+            }
+            c = fgetc(fptr);
+        }
+        fputs(information, fTemp);
+        fclose(fTemp);
+        fclose(fptr);
+        remove(filename);
+        rename("replace.txt",filename);
+        //New account to be added
+    }
+    else
+    {
+        fputs(information, fptr);
+        fclose(fptr);
+    }
+    
+    
 }
 
 void db_Editor()
@@ -82,7 +115,6 @@ void db_Editor()
     struct mesg_server serverMsg;
     key_t key;
     int msgid;
-    //key = ftok("progfile", 65);
     msgid = msgget((key_t)1234, 0666 | IPC_CREAT);
 
     while (1)
@@ -128,10 +160,10 @@ void db_Server()
             information = readDB(account);
             printf("%s", information);
             sendBack.msg_type = OK;
-            // if (information != account.account.pin)
-            // {
-            //     sendBack.msg_type = PIN_WRONG;
-            // }
+            if (information != account.account.pin)
+            {
+                sendBack.msg_type = PIN_WRONG;
+            }
             if (msgsnd(msgid, &sendBack, sizeof(sendBack), 0) == -1)
             {
                 perror("msgsnd: msgsnd faild");
@@ -140,10 +172,8 @@ void db_Server()
         case BALANCE:
             information = readDB(account);
             sendBack.msg_type = BALANCE;
-            sendBack.account.funds=atof(information);
-            //double amount = atof(readDB(account));
-            //printf("%f",amount);
-            //sendBack.account.funds = (float)strtod(readDB(account),NULL);
+            sendBack.account.funds = atof(information);
+            printf("%f", sendBack.account.funds);
             if (msgsnd(msgid, &sendBack, sizeof(sendBack), 0) == -1)
             {
                 perror("msgsnd: msgsnd faild");
@@ -159,7 +189,6 @@ void db_Server()
 
 int main()
 {
-
     pid_t pid = fork();
 
     if (pid == 0)
