@@ -68,7 +68,7 @@ void updateDB(struct mesg_server receivedInfo)
     sprintf(number, "%.2f", receivedInfo.account.funds);
     snprintf(information, sizeof information, "%s %s %s\n", receivedInfo.account.account_number, newPin, number);
     //If the account is present already, setup a new file without the account to be updatted
- 
+
     if (readDB(receivedInfo) != NULL)
     {
         fTemp = fopen("replace.txt", "a");
@@ -149,6 +149,7 @@ void db_Server()
     int msgid;
     struct mesg_server account;
     struct mesg_server sendBack;
+    struct mesg_account_creation holder;
     char *information;
     char temp[99];
     msgid = msgget((key_t)1234, 0666 | IPC_CREAT);
@@ -163,9 +164,11 @@ void db_Server()
         {
         case PIN:
             information = readDB(account);
-            //printf("%s", information);
+            int pin;
+            sscanf(information, "%d",&pin);
+            pin--;
             sendBack.msg_type = OK;
-            if (information != account.account.pin)
+            if (pin != atoi(account.account.pin))
             {
                 sendBack.msg_type = PIN_WRONG;
             }
@@ -176,16 +179,29 @@ void db_Server()
             }
         case BALANCE:
             information = readDB(account);
-            snprintf(temp,sizeof temp,"%s",information);
+            snprintf(temp, sizeof temp, "%s", information);
             sendBack.msg_type = BALANCE;
-            sendBack.account.funds= atof(temp);
+            sendBack.account.funds = atof(temp);
             if (msgsnd(msgid, &sendBack, sizeof(sendBack), 0) == -1)
             {
                 perror("msgsnd: msgsnd faild");
                 exit(1);
             }
         case WITHDRAW:
-            break;
+            information = readDB(account);
+            float funds;
+            sscanf(information, "%f",&funds);
+            if (funds>account.account.funds){
+                sendBack.msg_type = NSF;
+            }
+            else{
+                sendBack.msg_type = NSF;
+            }
+            if (msgsnd(msgid, &sendBack, sizeof(sendBack), 0) == -1)
+            {
+                perror("msgsnd: msgsnd faild");
+                exit(1);
+            }
         case UPDATE_DB:
             updateDB(account);
         }
