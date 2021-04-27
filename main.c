@@ -11,8 +11,8 @@ int checkInput(char string[], int length)
     }
     return 1;
 }
-
-char readDB(struct mesg_server receievedInfo)
+//This will read the Database and find the value that the request needs to complete
+char *readDB(struct mesg_server receievedInfo)
 {
     FILE *fptr;
     char line[999];
@@ -30,18 +30,19 @@ char readDB(struct mesg_server receievedInfo)
         if (strcmp(token, receievedInfo.account.account_number) == 0)
         {
             token = strtok(NULL, " ");
-            //Return balance
-            if (receievedInfo.msg_type == BALANCE)
+            //Return pin
+            if (receievedInfo.msg_type == PIN)
             {
                 return token;
             }
-            //Return Pin
+            //Return balance
             else
             {
                 token = strtok(NULL, " ");
                 return token;
             }
         }
+        token = NULL;
     }
 
     return NULL;
@@ -52,7 +53,7 @@ void updateDB(struct mesg_server receivedInfo)
     FILE *fptr;
     FILE *fTemp;
     int replace = 0;
-    char line[99],  c,information[99],reapeatLines[99];
+    char line[99], c, information[99], reapeatLines[99];
     char number[20];
     fptr = fopen("database.txt", "a+");
 
@@ -61,13 +62,13 @@ void updateDB(struct mesg_server receivedInfo)
         printf("Unable to open files");
         exit(1);
     }
-    printf("%s",receivedInfo.account.account_number);
     int blah = atoi(receivedInfo.account.pin) + 1;
     char newPin[5];
     sprintf(newPin, "%d", blah);
     sprintf(number, "%.2f", receivedInfo.account.funds);
-    snprintf(information, sizeof information, "%s %s %s\n",receivedInfo.account.account_number, newPin, number);
+    snprintf(information, sizeof information, "%s %s %s\n", receivedInfo.account.account_number, newPin, number);
     //If the account is present already, setup a new file without the account to be updatted
+ 
     if (readDB(receivedInfo) != NULL)
     {
         fTemp = fopen("replace.txt", "a");
@@ -82,21 +83,20 @@ void updateDB(struct mesg_server receivedInfo)
             char accountNumber[5];
             char funds[49];
             char *token = strtok(line, " ");
-            
 
             //printf("\nThis is the accountNumber, pin, funds:%s %s %s  and the compare statement: %i", accountNumber,pin,funds, strcmp(accountNumber, receivedInfo.account.account_number));
-             if (strcmp(token, receivedInfo.account.account_number) != 0)
-             {
+            if (strcmp(token, receivedInfo.account.account_number) != 0)
+            {
 
-                sprintf(accountNumber, "%s",token);
-                token= strtok(NULL, " ");
-                sprintf(pin, "%s",token);
-                token= strtok(NULL, " ");
-                sprintf(funds, "%s",token);
-                snprintf(reapeatLines, sizeof reapeatLines, "%s %s %s",accountNumber, pin, funds);
+                sprintf(accountNumber, "%s", token);
+                token = strtok(NULL, " ");
+                sprintf(pin, "%s", token);
+                token = strtok(NULL, " ");
+                sprintf(funds, "%s", token);
+                snprintf(reapeatLines, sizeof reapeatLines, "%s %s %s", accountNumber, pin, funds);
                 fputs(reapeatLines, fTemp);
-                memset(reapeatLines,0, sizeof reapeatLines);
-             }
+                memset(reapeatLines, 0, sizeof reapeatLines);
+            }
         }
         //printf("\nInformation to be appended: %s", information);
         fputs(information, fTemp);
@@ -150,6 +150,7 @@ void db_Server()
     struct mesg_server account;
     struct mesg_server sendBack;
     char *information;
+    char temp[99];
     msgid = msgget((key_t)1234, 0666 | IPC_CREAT);
     while (1)
     {
@@ -162,7 +163,7 @@ void db_Server()
         {
         case PIN:
             information = readDB(account);
-            printf("%s", information);
+            //printf("%s", information);
             sendBack.msg_type = OK;
             if (information != account.account.pin)
             {
@@ -175,9 +176,9 @@ void db_Server()
             }
         case BALANCE:
             information = readDB(account);
+            snprintf(temp,sizeof temp,"%s",information);
             sendBack.msg_type = BALANCE;
-            sendBack.account.funds = atof(information);
-            printf("%f", sendBack.account.funds);
+            sendBack.account.funds= atof(temp);
             if (msgsnd(msgid, &sendBack, sizeof(sendBack), 0) == -1)
             {
                 perror("msgsnd: msgsnd faild");
