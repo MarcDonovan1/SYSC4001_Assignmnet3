@@ -1,3 +1,6 @@
+#ifndef header.h
+#define header.h
+
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,3 +31,5 @@ struct mesg_server{
 #define ACCOUNT_BLOCKED 8
 #define PIN 9
 #define ACCOUNT_OK 10
+
+#endif
