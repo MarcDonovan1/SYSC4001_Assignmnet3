@@ -18,6 +18,11 @@ struct mesg_server{
     struct mesg_account_creation account;
 };
 
+struct pinVerify{
+    int attempts;
+    char account_number[5];
+};
+
 #define PIN_WRONG 1
 #define BALANCE 2
 #define WITHDRAW 3
