@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include "header.h"
 
 int checkInput(char string[], int length)
@@ -13,7 +12,7 @@ int checkInput(char string[], int length)
     return 1;
 }
 
-char *readDB(struct mesg_server receievedInfo)
+char readDB(struct mesg_server receievedInfo)
 {
     FILE *fptr;
     char line[999];
@@ -53,26 +52,21 @@ void updateDB(struct mesg_server receivedInfo)
     FILE *fptr;
     FILE *fTemp;
     int replace = 0;
-    char line[999], filename[] = "database.txt",c;
-    char *information;
-    char number[10];
-    fptr = fopen("database.txt", "a");
+    char line[99],  c,information[99],reapeatLines[99];
+    char number[20];
+    fptr = fopen("database.txt", "a+");
 
     if (fptr == NULL)
     {
         printf("Unable to open files");
         exit(1);
     }
+    printf("%s",receivedInfo.account.account_number);
     int blah = atoi(receivedInfo.account.pin) + 1;
     char newPin[5];
     sprintf(newPin, "%d", blah);
     sprintf(number, "%.2f", receivedInfo.account.funds);
-    strcpy(information, receivedInfo.account.account_number);
-    strcat(information, " ");
-    strcat(information, newPin);
-    strcat(information, " ");
-    strcat(information, number);
-    strcat(information, " \n");
+    snprintf(information, sizeof information, "%s %s %s\n",receivedInfo.account.account_number, newPin, number);
     //If the account is present already, setup a new file without the account to be updatted
     if (readDB(receivedInfo) != NULL)
     {
@@ -82,22 +76,34 @@ void updateDB(struct mesg_server receivedInfo)
             printf("Unable to open files");
             exit(1);
         }
-        c = fgetc(fptr);
-        printf("%c",c);
-        while (c != EOF)
+        while (fgets(line, sizeof(line), fptr))
         {
+            char pin[3];
+            char accountNumber[5];
+            char funds[49];
             char *token = strtok(line, " ");
-            if (strcmp(token, receivedInfo.account.account_number) != 0)
-            {
-               fputc(c, fTemp);
-            }
-            c = fgetc(fptr);
+            
+
+            //printf("\nThis is the accountNumber, pin, funds:%s %s %s  and the compare statement: %i", accountNumber,pin,funds, strcmp(accountNumber, receivedInfo.account.account_number));
+             if (strcmp(token, receivedInfo.account.account_number) != 0)
+             {
+
+                sprintf(accountNumber, "%s",token);
+                token= strtok(NULL, " ");
+                sprintf(pin, "%s",token);
+                token= strtok(NULL, " ");
+                sprintf(funds, "%s",token);
+                snprintf(reapeatLines, sizeof reapeatLines, "%s %s %s",accountNumber, pin, funds);
+                fputs(reapeatLines, fTemp);
+                memset(reapeatLines,0, sizeof reapeatLines);
+             }
         }
+        //printf("\nInformation to be appended: %s", information);
         fputs(information, fTemp);
         fclose(fTemp);
         fclose(fptr);
-        remove(filename);
-        rename("replace.txt",filename);
+        remove("database.txt");
+        rename("replace.txt", "database.txt");
         //New account to be added
     }
     else
@@ -105,8 +111,6 @@ void updateDB(struct mesg_server receivedInfo)
         fputs(information, fptr);
         fclose(fptr);
     }
-    
-    
 }
 
 void db_Editor()

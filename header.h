@@ -4,9 +4,10 @@
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include <string.h>
+
+
 struct mesg_account_creation
 {
-    int msg_type;
     char account_number[5];
     float funds;
     char pin[3];
