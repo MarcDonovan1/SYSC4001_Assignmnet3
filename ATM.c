@@ -1,5 +1,93 @@
 #include "header.h"
 
+
+
+int checkInput(char string[], int length);
+
+struct mesg_account_creation requestAccountInfo();
+
+void sendPinToDBServer(struct mesg_account_creation account, int msgid);
+void sendBalanceToDBServer(struct mesg_account_creation account, int msgid);
+int sendWithdrawToDBServer(struct mesg_account_creation account, int msgid);
+
+
+
+int main()
+{
+    struct mesg_account_creation account;
+    struct mesg_server serverMsg;
+    key_t key;
+    int msgid;
+    // int trialCounter = 0;
+
+    //key = ftok("progfile", 65);
+    msgid = msgget((key_t)1234, 0666 | IPC_CREAT);
+
+    while (1)
+    {
+        // requestAccountInfo calls scanf()'s to request info from the ATM user
+        account = requestAccountInfo();
+        sendPinToDBServer(account, msgid);
+
+        // check if received message type is 1, which corresponds to PIN_WRONG
+        // if pin is wrong, try again
+        while (msgrcv(msgid, &serverMsg, sizeof(serverMsg), 0, 0) == 1)
+        {
+            printf("Pin is wrong, please try again:");
+            account = requestAccountInfo();
+            sendPinToDBServer(account, msgid);
+        }
+
+        // Pin is not wrong, so continue with other cases
+        switch (account.msg_type)
+        {
+            // case that the pin was wrong for a third time,
+            // DBServer will reply with account_blocked
+            case ACCOUNT_BLOCKED:
+                printf("account is blocked");
+                exit(1);
+
+            case ACCOUNT_OK: 
+            int balanceOrWithdraw;
+            
+            printf("please enter 0 to see your balance and 1 to withdraw:");
+            scanf("%d",balanceOrWithdraw);\
+
+
+
+            // -----              Customer has made it through successfully!              -----//
+            // ----- They now have to select between getting their Balance or Withdrawing -----//
+
+            // Option 1, BALANCE (value of 2):
+            if (balanceOrWithdraw == 0)
+            {
+                sendBalanceToDBServer(account, msgid);
+
+                mmsgrcv(msgid, &serverMsg, sizeof(serverMsg), 0);
+                printf("Current Balance: %f", serverMsg.account.funds);
+            }
+
+            // Option 2, WITHDRAW (value of 3):
+            else 
+            {
+                sendWithdrawToDBServer(account, msgid);
+
+                // if FUNDS_OK (value of 5), 
+                if (mmsgrcv(msgid, &serverMsg, sizeof(serverMsg), 0) == 5)
+                {
+                printf("Funds: %f", serverMsg.account.funds);
+                }
+                // else, not sufficient funds
+                else 
+                {
+                    printf("insufficient funds to withdraw the requested amount");
+                }
+
+            }
+        }
+    }
+}
+    
 int checkInput(char string[], int length)
 {
     int i;
@@ -37,8 +125,10 @@ struct mesg_account_creation requestAccountInfo()
     return account;
 }
 
-void sendPinToDBServer(struct mesg_account_creation account)
+void sendPinToDBServer(struct mesg_account_creation account, int msgid)
 {
+    struct mesg_server serverMsg;
+
     serverMsg.account = account;
     serverMsg.msg_type = PIN;
     serverMsg.account.msg_type= PIN;
@@ -48,8 +138,10 @@ void sendPinToDBServer(struct mesg_account_creation account)
     }
 }
 
-void sendBalanceToDBServer(struct mesg_account_creation account)
+void sendBalanceToDBServer(struct mesg_account_creation account, int msgid)
 {
+    struct mesg_server serverMsg;
+
     serverMsg.account = account;
     serverMsg.msg_type = BALANCE;
     serverMsg.account.msg_type= BALANCE;
@@ -59,11 +151,14 @@ void sendBalanceToDBServer(struct mesg_account_creation account)
     }
 }
 
-void sendWithdrawToDBServer(struct mesg_account_creation account)
+int sendWithdrawToDBServer(struct mesg_account_creation account, int msgid)
 {
+    struct mesg_server serverMsg;
+
     // ADD THIS FOR WITHDRAW:
     // printf("Enter the ammount you would like to withdraw:");
-    // scanf("%s", account.withdraw);
+    // scanf("%s", account.some_new_withdrawal_amount_attribute);
+
     serverMsg.account = account;
     serverMsg.msg_type = WITHDRAW;
     serverMsg.account.msg_type= WITHDRAW;
@@ -71,72 +166,9 @@ void sendWithdrawToDBServer(struct mesg_account_creation account)
         perror("msgsnd: msgsnd failed");
         exit(1);
     }
-}
 
-
-int main()
-{
-    struct mesg_account_creation account;
-    struct mesg_server serverMsg;
-    key_t key;
-    int msgid;
-    // int trialCounter = 0;
-
-    //key = ftok("progfile", 65);
-    msgid = msgget((key_t)1234, 0666 | IPC_CREAT);
-
-    while (1)
-    {
-
-        account = requestAccountInfo();
-        sendPinToDBServer(account);
-
-        // check if received message type is 1, which corresponds to PIN_WRONG
-        while (msgrcv(msgid, &serverMsg, sizeof(serverMsg), 0, 0) == 1)
-        {
-            printf("Pin is wrong, please try again:");
-            account = requestAccountInfo();
-            sendPinToDBServer(account);
-        }
-
-        // Pin is not wrong, continue with other cases
-        switch (account.msg_type)
-        {
-        case ACCOUNT_BLOCKED:
-            printf("account is blocked");
-            exit(1);
-
-        case ACCOUNT_OK: 
-        int balanceOrWithdraw
-        
-        printf("please enter 0 to see your balance and 1 to withdraw:")
-        scanf("%d",balanceOrWithdraw);
-
-        // ----- Customer has made it through successfully!! They now have 2 options: -----//
-        // Option 1, BALANCE (value of 2):
-        if (balanceOrWithdraw == 0)
-        {
-            sendBalanceToDBServer(account);
-
-            mmsgrcv(msgid, &serverMsg, sizeof(serverMsg), 0)
-            printf("Current Balance: %f", serverMsg.account.funds);
-            
-        }
-
-        // Option 2, WITHDRAW (value of 3):
-        else 
-        {
-            sendWithdrawToDBServer(account);
-
-            if (mmsgrcv(msgid, &serverMsg, sizeof(serverMsg), 0) == 2);
-            printf("Funds: %f", serverMsg.account.funds);
-
-            // else, not sufficient funds
-            else 
-            {
-                printf("insufficient funds to withdraw the requested amount");
-            }
-
-        }
-    }
+    // ADD THIS FOR WITHDRAW:
+    // --- need a new attribute in the account struct --- //
+    // ---   to pass the withdraw amount to be made   --- //
+    // return account.some_new_withdrawal_amount_attribute;
 }
