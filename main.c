@@ -27,8 +27,10 @@ char *readDB(struct mesg_server receievedInfo)
     {
         char *token = strtok(line, " ");
         printf("%i", strcmp(token, receievedInfo.account.account_number));
+        //Token is account number
         if (strcmp(token, receievedInfo.account.account_number) == 0)
         {
+            //Token = pin
             token = strtok(NULL, " ");
             //Return pin
             if (receievedInfo.msg_type == PIN)
@@ -38,6 +40,7 @@ char *readDB(struct mesg_server receievedInfo)
             //Return balance
             else
             {
+                //Toekn = balance
                 token = strtok(NULL, " ");
                 return token;
             }
@@ -87,7 +90,6 @@ void updateDB(struct mesg_server receivedInfo)
             //printf("\nThis is the accountNumber, pin, funds:%s %s %s  and the compare statement: %i", accountNumber,pin,funds, strcmp(accountNumber, receivedInfo.account.account_number));
             if (strcmp(token, receivedInfo.account.account_number) != 0)
             {
-
                 sprintf(accountNumber, "%s", token);
                 token = strtok(NULL, " ");
                 sprintf(pin, "%s", token);
@@ -143,6 +145,11 @@ void db_Editor()
     }
 }
 
+int checkAccount(struct pinVerify *accounts, char *attempt){
+
+    return 0;
+}
+
 void db_Server()
 {
     key_t key;
@@ -152,6 +159,8 @@ void db_Server()
     struct mesg_account_creation holder;
     char *information;
     char temp[99];
+    struct pinVerify accounts[15];
+    int counter = 0;
     msgid = msgget((key_t)1234, 0666 | IPC_CREAT);
     while (1)
     {
@@ -165,12 +174,19 @@ void db_Server()
         case PIN:
             information = readDB(account);
             int pin;
-            sscanf(information, "%d",&pin);
+            sscanf(information, "%d", &pin);
             pin--;
             sendBack.msg_type = OK;
             if (pin != atoi(account.account.pin))
             {
-                sendBack.msg_type = PIN_WRONG;
+                if (checkAccount(accounts,account.account.account_number)==3){
+                    sendBack.msg_type = ACCOUNT_BLOCKED;
+                    //account.account.account_number.charAt(0);
+                }
+                else{
+                    sendBack.msg_type = PIN_WRONG;
+                }
+                
             }
             if (msgsnd(msgid, &sendBack, sizeof(sendBack), 0) == -1)
             {
@@ -190,12 +206,16 @@ void db_Server()
         case WITHDRAW:
             information = readDB(account);
             float funds;
-            sscanf(information, "%f",&funds);
-            if (funds>account.account.funds){
+            sscanf(information, "%f", &funds);
+            if (funds > account.account.funds)
+            {
                 sendBack.msg_type = NSF;
             }
-            else{
-                sendBack.msg_type = NSF;
+            else
+            {
+                sendBack.msg_type = FUNDS_OK;
+                account.account.funds = account.account.funds - funds;
+                updateDB(account);
             }
             if (msgsnd(msgid, &sendBack, sizeof(sendBack), 0) == -1)
             {
