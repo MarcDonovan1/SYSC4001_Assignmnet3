@@ -1,5 +1,5 @@
-#ifndef header.h
-#define header.h
+#ifndef header
+#define header
 
 #include <unistd.h>
 #include <stdio.h>
@@ -8,12 +8,13 @@
 #include <sys/msg.h>
 #include <string.h>
 
-
 struct mesg_account_creation
 {
     char account_number[5];
     float funds;
     char pin[3];
+    char withdraw[4];
+    char deposit[4];
 };
 
 struct mesg_server{
@@ -36,5 +37,6 @@ struct pinVerify{
 #define ACCOUNT_BLOCKED 8
 #define PIN 9
 #define ACCOUNT_OK 10
+#define DEPOSIT 11
 
 #endif

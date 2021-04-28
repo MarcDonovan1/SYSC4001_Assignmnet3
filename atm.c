@@ -9,7 +9,7 @@ struct mesg_account_creation requestAccountInfo();
 void sendPinToDBServer(struct mesg_account_creation account, int msgid);
 void sendBalanceToDBServer(struct mesg_account_creation account, int msgid);
 int sendWithdrawToDBServer(struct mesg_account_creation account, int msgid);
-
+int sendDepositToDBServer(struct mesg_account_creation account, int msgid);
 
 
 int main()
@@ -49,9 +49,9 @@ int main()
 
             case OK: 
             {                
-                printf("please enter 0 to see your balance and 1 to withdraw:");
-                int balanceOrWithdraw;
-                scanf("%d",&balanceOrWithdraw);
+                printf("please enter 0 to see your balance, 1 to withdraw, 2 to deposit:");
+                int balanceOrWithdrawOrDeposit;
+                scanf("%d",&balanceOrWithdrawOrDeposit);
 
 
 
@@ -59,7 +59,7 @@ int main()
                 // ----- They now have to select between getting their Balance or Withdrawing -----//
 
                 // Option 1, BALANCE (value of 2):
-                if (balanceOrWithdraw == 0)
+                if (balanceOrWithdrawOrDeposit == 0)
                 {
                     sendBalanceToDBServer(account, msgid);
 
@@ -68,7 +68,7 @@ int main()
                 }
 
                 // Option 2, WITHDRAW (value of 3):
-                else 
+                else if (balanceOrWithdrawOrDeposit == 1) 
                 {
                     sendWithdrawToDBServer(account, msgid);
 
@@ -84,11 +84,25 @@ int main()
                     }
 
                 }
+                // Option 3 (default), DEPOSIT (value of 11)
+                else 
+                {
+                    sendDepositToDBServer(account, msgid);
+
+                    // if deposit deposited! (value of 5), 
+                    if (msgrcv(msgid, &serverMsg, sizeof(serverMsg), 0, 0) == -1) 
+                    {
+                        printf("there was an error depositing your money, please login and try again\n");
+                    }
+                    printf("your amount has been deposited!\n");
+                    
+                }
             }
         }
     }
+    return 0;
 }
-    
+
 int checkInput(char string[], int length)
 {
     printf("%s\n", string);
@@ -159,9 +173,8 @@ int sendWithdrawToDBServer(struct mesg_account_creation account, int msgid)
 {
     struct mesg_server serverMsg;
 
-    // ADD THIS FOR WITHDRAW:
-    // printf("Enter the amount you would like to withdraw:");
-    // scanf("%s", account.some_new_withdrawal_amount_attribute);
+    printf("Enter the amount you would like to withdraw:");
+    scanf("%s", account.withdraw);
 
     serverMsg.account = account;
     serverMsg.msg_type = WITHDRAW;
@@ -169,9 +182,22 @@ int sendWithdrawToDBServer(struct mesg_account_creation account, int msgid)
         perror("msgsnd: msgsnd failed");
         exit(1);
     }
+    return account.withdraw;
+}
 
-    // ADD THIS FOR WITHDRAW:
-    // --- need a new attribute in the account struct --- //
-    // ---   to pass the withdraw amount to be made   --- //
-    // return account.some_new_withdrawal_amount_attribute;
+int sendDepositToDBServer(struct mesg_account_creation account, int msgid)
+{
+    struct mesg_server serverMsg;
+
+    printf("Enter the amount you would like to deposit:");
+    scanf("%s", account.deposit);
+
+    serverMsg.account = account;
+    serverMsg.msg_type = DEPOSIT;
+    if (msgsnd(msgid, &serverMsg, sizeof(serverMsg), 0)==-1){
+        perror("msgsnd: msgsnd failed");
+        exit(1);
+
+    }
+    return account.deposit;
 }

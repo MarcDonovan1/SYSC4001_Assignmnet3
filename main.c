@@ -11,7 +11,7 @@ int checkInput(char string[], int length)
     }
     return 1;
 }
-//This will read the Database and find the value that the request needs to complete
+// This will read the Database and find the value that the request needs to complete
 char *readDB(struct mesg_server receievedInfo)
 {
     FILE *fptr;
@@ -40,7 +40,7 @@ char *readDB(struct mesg_server receievedInfo)
             //Return balance
             else
             {
-                //Toekn = balance
+                //Token = balance
                 token = strtok(NULL, " ");
                 return token;
             }
@@ -117,6 +117,8 @@ void updateDB(struct mesg_server receivedInfo)
 
 void db_Editor()
 {
+    printf("db editorrrr\n");
+
     struct mesg_account_creation account;
     struct mesg_server serverMsg;
     key_t key;
@@ -222,10 +224,64 @@ void db_Server()
                 perror("msgsnd: msgsnd faild");
                 exit(1);
             }
+        case DEPOSIT:
+            information = readDB(account);
+            float funds;
+            sscanf(information, "%f", &funds);
+            sendBack.msg_type = FUNDS_OK;
+            account.account.funds = account.account.funds + funds;
+            updateDB(account);
+            
+            if (msgsnd(msgid, &sendBack, sizeof(sendBack), 0) == -1)
+            {
+                perror("msgsnd: msgsnd faild");
+                exit(1);
+            }
         case UPDATE_DB:
             updateDB(account);
         }
     }
+}
+
+void db_InterestCalculator()
+{
+    key_t key;
+    int msgid;
+    struct mesg_server account;
+    char *information;
+    FILE *fptr;
+    char line[999];
+    fptr = fopen("database.txt", "r");
+
+    account.msg_type = BALANCE;
+
+    while(1) 
+    {
+
+        sleep(60);
+
+        while (fgets(line, sizeof(line), fptr))
+        {
+            // token will equal account number
+            char *accountNumber = strtok(line, " ");
+
+            information = readDB(account);
+            float funds; 
+
+                sscanf(information, "%f", &funds);
+        if (account.account.funds > 0) 
+            {
+                account.account.funds = account.account.funds * 1.1;
+            } 
+            else 
+            {
+                account.account.funds = account.account.funds * 0.8;
+            }
+            account.account.funds = account.account.funds * 0.9;
+            updateDB(account);
+        }
+    }
+    
 }
 
 int main()
@@ -235,6 +291,14 @@ int main()
     if (pid == 0)
         db_Editor();
 
-    if (pid > 0)
-        db_Server();
+    if (pid > 0) 
+    {
+        pid = fork();
+
+        if (pid== 0)
+            db_InterestCalculator();
+
+        else
+            db_Server();
+    }
 }
